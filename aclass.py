@@ -17,7 +17,7 @@ def extract_links(html_text):
 
 
 def extract_words(html_text, *, ignore=[]):
-    soup = BeautifulSoup(html_text, "lxml")
+    soup = BeautifulSoup(html_text, "html.parser")
 
     for script in soup(["script", "style"]):
         script.decompose()
@@ -26,6 +26,10 @@ def extract_words(html_text, *, ignore=[]):
     clean_words = [i for i in words if i and i.lower() not in ignore]
 
     return clean_words
+
+
+def categorize_top_words(top_words):
+    pass
 
 
 if __name__ == "__main__":
@@ -48,33 +52,37 @@ if __name__ == "__main__":
         default=[])
     PARSER.add_argument(
         "-e",
-        "--export",
+        "--export-file",
         help="export html bookmarks file",
         nargs="?",
         type=str,
         const="bookmark.html")
     ARGS = PARSER.parse_args()
 
+    # Urls are needed, of course
+    if not ARGS.urls:
+        PARSER.print_usage()
+        print("urls are needed!")
+        PARSER.exit()
+
+    # To ignore
+    STOP_ES = json.load(open("stop-es.json", "r"))
+    STOP_EN = json.load(open("stop-en.json", "r"))
+    STOP_WORDS = STOP_EN + STOP_ES
+
+    # Extraction
     HEADERS = {
         'User-Agent':
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
     }
 
-    # Ignore
-    STOP_ES = json.load(open("stop-es.json", "r"))
-    STOP_EN = json.load(open("stop-en.json", "r"))
-    STOP_WORDS = STOP_EN + STOP_ES
+    TOP_WORDS = []
+    for url in ARGS.urls:
+        html = requests.get(url, headers=HEADERS)
+        words = extract_words(html.content, ignore=STOP_WORDS)
+        count = Counter(words).most_common(10)
+        TOP_WORDS.append((url, count))
 
-    # Extract
-    HTML = requests.get(
-        "https://stackoverflow.com/questions/8113782/split-string-on-whitespace-in-python",
-        headers=HEADERS)
-    WORDS = extract_words(HTML.content, ignore=STOP_WORDS)
-
-    with open("debug.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(WORDS))
-
-    COUNT = Counter(WORDS).most_common(5)
-    print(COUNT)
+    print(TOP_WORDS)
 
     # print(extract_links("http://news.ycombinator.com", headers=HEADER))
