@@ -7,9 +7,6 @@ from collections import Counter
 import requests
 from bs4 import BeautifulSoup
 
-from lxml import html
-from lxml.html.clean import clean_html
-
 
 def extract_links(url, *, headers={}):
     page = requests.get(url, headers=HEADER)
@@ -22,29 +19,11 @@ def extract_links(url, *, headers={}):
 
 def extract_words(url, *, headers={}):
     page = requests.get(url, headers=headers)
-
-    soup = BeautifulSoup(page.content, "html.parser")
-
-    tree = html.fromstring(soup.get_text())
-    clean_tree = clean_html(tree)
-    text = clean_tree.text_content()
-
-    with open("dump.txt", "w", encoding="utf-8") as f:
-        f.write(text)
-
-    return re.split("[^a-zA-Z0-9]", text)
-
-
-def extract_words2(url, *, headers={}):
-    page = requests.get(url, headers=headers)
     soup = BeautifulSoup(page.content, "lxml")
 
     for script in soup(["script", "style"]):
         script.decompose()
     text = soup.get_text().split()
-
-    with open("dump.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(text))
 
     return text
 
@@ -66,10 +45,13 @@ if __name__ == "__main__":
     STOP_EN = json.load(open("stop-en.json", "r"))
     STOP_WORDS = STOP_EN + STOP_ES
 
-    WORDS = extract_words2(
+    WORDS = extract_words(
         "https://stackoverflow.com/questions/8113782/split-string-on-whitespace-in-python",
         headers=HEADER)
     CLEAN = [w for w in WORDS if w and w.lower() not in STOP_WORDS]
+
+    with open("debug.txt", "w", encoding="utf-8") as f:
+        f.write("\n".join(CLEAN))
 
     COUNT = Counter(CLEAN)
     print(COUNT)
