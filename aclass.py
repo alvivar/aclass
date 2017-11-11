@@ -1,3 +1,6 @@
+""" Analize and categorize urls, also export them to a Netscape Bookmark html
+file. """
+
 import argparse
 import json
 import os
@@ -10,6 +13,7 @@ from bs4 import BeautifulSoup
 
 
 def extract_urls(html_text):
+    """ Return a list of urls from the html text. """
     soup = BeautifulSoup(html_text, "html.parser")
     return [
         a['href'] for a in soup.find_all("a") if a['href'].startswith("http")
@@ -17,6 +21,8 @@ def extract_urls(html_text):
 
 
 def extract_words(html_text, *, ignore=[]):
+    """ Return a list of words from the html text. """
+
     soup = BeautifulSoup(html_text, "html.parser")
 
     for script in soup(["script", "style"]):
@@ -28,8 +34,39 @@ def extract_words(html_text, *, ignore=[]):
     return clean
 
 
-def categorize_top_words(top_words):
-    pass
+def get_top_words(urls_list, words_count):
+    """ Return a list of tuples with urls and their word count dictionary. """
+
+    headers = {
+        'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/39.0.2171.95 Safari/537.36'
+    }
+
+    top = []
+    for url in urls_list:
+        print(f"Analyzing {url}")
+        try:
+            html = requests.get(url, headers=headers)
+            words = extract_words(html.content, ignore=STOP_WORDS)
+            count = Counter(words).most_common(words_count)
+        except requests.exceptions.ConnectionError:
+            continue  # TODO Bind the url to a None kind of word count
+        top.append((url, count))
+
+    return top  # ("url", ({"word" : count}, *))
+
+
+def get_top_words_categories(top_words):
+    """ Return a dictionary of words referencing a list of the urls that belong
+    to them, assuming top_words as a list of tuples with urls and their word
+    counts dictionaries. """
+    categories = {}
+    for top in top_words:
+        for tag in top[1]:
+            categories.setdefault(tag[0], []).append(top[0])
+    return categories  # {"word" : ["url that belongs", *]}
 
 
 if __name__ == "__main__":
@@ -79,28 +116,19 @@ if __name__ == "__main__":
     STOP_EN = json.load(open("stop-en.json", "r"))
     STOP_WORDS = STOP_EN + STOP_ES
 
-    # Extraction and word count | -u
-    HEADERS = {
-        'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
-    }
-
-    TOP = []
-    for url in ARGS.urls:
-        print(f"Analyzing {url}")
-
-        try:
-            html = requests.get(url, headers=HEADERS)
-            words = extract_words(html.content, ignore=STOP_WORDS)
-            count = Counter(words).most_common(10)
-        except requests.exceptions.ConnectionError:
-            continue
-
-        TOP.append((url, count))
+    # Analysis
+    TOP_WORDS = get_top_words(ARGS.urls, 3)
+    CATEGORIES = get_top_words_categories(TOP_WORDS)
 
     # Sexy print
-    for url in TOP:
-        print(f"\n{url[0]}")
-        for count in url[1]:
-            print(f"({count[0]} {count[1]}) ", end='')
+    for t in TOP_WORDS:
+        print(f"\n{t[0]}")
+        for word_list in t[1]:
+            print(f"({word_list[0]} {word_list[1]}) ", end='')
+        print()
+
+    for cat, url_list in CATEGORIES.items():
+        print(f"\n{cat}")
+        for u in url_list:
+            print(u)
         print()
