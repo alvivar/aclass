@@ -117,7 +117,7 @@ if __name__ == "__main__":
     STOP_WORDS = STOP_EN + STOP_ES
 
     # Analysis
-    TOP_WORDS = get_top_words(ARGS.urls, 3)
+    TOP_WORDS = get_top_words(ARGS.urls, 5)
     CATEGORIES = get_top_words_categories(TOP_WORDS)
 
     # Sexy print
@@ -131,4 +131,3 @@ if __name__ == "__main__":
         print(f"\n{cat}")
         for u in url_list:
             print(u)
-        print()
