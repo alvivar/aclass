@@ -3,11 +3,11 @@ file.
 
 
 TODO
-    Readme
-    Avoid URL repetition
-    Decent titles in bookmark file
+    Avoid URL repetition in categories
     Bind the url to a None kind of word count on html request error
     Analyze url as a source of urls (same as file)
+    Decent titles in bookmark file
+    Readme
     Decent database with all urls analyzed
 """
 
