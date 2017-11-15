@@ -3,6 +3,7 @@ file.
 
 
 TODO
+    Readme
     Avoid URL repetition
     Decent titles in bookmark file
     Bind the url to a None kind of word count on html request error
