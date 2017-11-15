@@ -3,9 +3,11 @@ file.
 
 
 TODO
-    Titles in bookmark file
-    Bind the url to a None kind of word count
-    Database with all urls analyzed
+    Avoid URL repetition
+    Decent titles in bookmark file
+    Bind the url to a None kind of word count on html request error
+    Analyze url as a source of urls (same as file)
+    Decent database with all urls analyzed
 """
 
 import argparse
@@ -104,6 +106,8 @@ def create_netscape_bookmark_file(categories, filename):
     """ Create a Netscape bookmark file assuming categories as a dictionary of
     words with lists of urls. """
 
+    # https://msdn.microsoft.com/en-us/library/aa753582(v=vs.85).aspx
+
     html = """<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <!-- This is an automatically generated file. It will be read and overwritten. Do Not Edit! -->
 <Title>Bookmarks</Title>
@@ -115,7 +119,13 @@ def create_netscape_bookmark_file(categories, filename):
         html += f'\n<DT><H3 FOLDED ADD_DATE="{date}">{cat}</H3>'
         html += f'\n<DL><p>'
         for u in urls:
-            html += f'\n<DT><A HREF="{u}" ADD_DATE="{date}" LAST_VISIT="{date}" LAST_MODIFIED="{date}">{u}</A>'
+            # TODO Better title
+            uwords = [
+                w.strip() for w in re.split("[^a-zA-Z]", u)
+                if w and w.strip() not in ["http", "https", "www"]
+            ]
+            title = " ".join(uwords)
+            html += f'\n<DT><A HREF="{u}" ADD_DATE="{date}" LAST_VISIT="{date}" LAST_MODIFIED="{date}">{title}</A>'
         html += f'\n</DL><p>'
     html += f'\n</DL><p>'
 
@@ -143,13 +153,13 @@ if __name__ == "__main__":
         help="files with urls to analyze",
         nargs="+",
         default=[])
-    PARSER.add_argument(
-        "-e",
-        "--export-file",
-        help="export html bookmarks file",
-        nargs="?",
-        type=str,
-        const="bookmarks.html")
+    # PARSER.add_argument(
+    #     "-e",
+    #     "--export-bookmarks",
+    #     help="export html bookmarks file",
+    #     nargs="?",
+    #     type=str,
+    #     const="bookmarks.html")
     ARGS = PARSER.parse_args()
 
     # Urls from files to the urls list | -f
@@ -176,12 +186,25 @@ if __name__ == "__main__":
     TOP_WORDS = get_top_words(ARGS.urls, 10)
     CATEGORIES = compact_categories_urls(get_top_words_categories(TOP_WORDS))
 
-    # Netscape bookmark file
-    if ARGS.export_file:
-        create_netscape_bookmark_file(CATEGORIES, ARGS.export_file)
-        print(f"Bookmarks exported to '{ARGS.export_file}' file!")
+    # Dump
+    TOP_WORDS_PRINT = {kv[0]: {k: v for k, v in kv[1]} for kv in TOP_WORDS}
 
-    print(f"Done! ({round(time.time() - START)}s)")
+    print()
+    with open("words.json", "w") as f:
+        print(f"Top words density saved in 'words.json'")
+        json.dump(TOP_WORDS_PRINT, f)
+
+    with open("categories.json", "w") as f:
+        print(f"Categories saved in 'categories.json'")
+        json.dump(CATEGORIES, f)
+
+    # Netscape bookmark file
+    ARGS.export_bookmarks = "bookmarks.html"
+    # if ARGS.export_bookmarks:
+    create_netscape_bookmark_file(CATEGORIES, ARGS.export_bookmarks)
+    print(f"Categories exported as bookmarks in '{ARGS.export_bookmarks}'")
+
+    print(f"\nDone! ({round(time.time() - START)}s)")
 
     # Sexy debug print
     # for t in TOP_WORDS:
