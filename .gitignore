@@ -1,3 +1,5 @@
 .vscode
 debug.*
+words.json
+categories.json
 bookmarks.html
