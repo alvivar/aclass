@@ -4,8 +4,8 @@ file.
 
 TODO
     Titles in bookmark file
-    Database with all urls analyzed
     Bind the url to a None kind of word count
+    Database with all urls analyzed
 """
 
 import argparse
