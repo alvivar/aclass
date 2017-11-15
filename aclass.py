@@ -1,11 +1,19 @@
 """ Analize and categorize urls, also export them to a Netscape Bookmark html
-file. """
+file.
+
+
+TODO
+    Titles in bookmark file
+    Database with all urls analyzed
+    Bind the url to a None kind of word count
+"""
 
 import argparse
 import json
 import os
 import re
 import sys
+import time
 from collections import Counter
 
 import requests
@@ -28,6 +36,7 @@ def extract_words(html_text, *, ignore=[]):
     for script in soup(["script", "style"]):
         script.decompose()
 
+    # '\s+'
     dirty = re.split('[^a-zA-Z]', soup.get_text().lower())
     clean = [i for i in dirty if i and i not in ignore]
 
@@ -52,7 +61,11 @@ def get_top_words(urls_list, words_count):
             words = extract_words(html.content, ignore=STOP_WORDS)
             count = Counter(words).most_common(words_count)
         except requests.exceptions.ConnectionError:
-            continue  # TODO Bind the url to a None kind of word count
+            # TODO Bind the url to a None kind of word count
+            continue
+        except requests.exceptions.MissingSchema:
+            print(f"Invalid URL {url}")
+            continue
         top.append((url, count))
 
     return top  # ("url", ({"word" : count}, *))
@@ -69,7 +82,50 @@ def get_top_words_categories(top_words):
     return categories  # {"word" : ["url that belongs", *]}
 
 
+def compact_categories_urls(categories):
+    """ Return the categories with more urls in each word for all urls, assuming
+    categories as a dictionary of words with lists of urls. """
+
+    compact = {}
+    urls_checked = []
+
+    for cat, urls in categories.items():
+        for u in urls:
+            if u not in urls_checked:
+                urls_checked.append(u)
+                uin = {k: v for k, v in categories.items() if u in v}
+                umax = max(uin, key=lambda kv: len(kv[1]))
+                compact[umax] = categories[umax]
+
+    return compact  # {"word" : ["url that belongs", *]}
+
+
+def create_netscape_bookmark_file(categories, filename):
+    """ Create a Netscape bookmark file assuming categories as a dictionary of
+    words with lists of urls. """
+
+    html = """<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file. It will be read and overwritten. Do Not Edit! -->
+<Title>Bookmarks</Title>
+<H1>Bookmarks</H1>"""
+
+    html += f'\n<DL><p>'
+    for cat, urls in categories.items():
+        date = round(time.time())
+        html += f'\n<DT><H3 FOLDED ADD_DATE="{date}">{cat}</H3>'
+        html += f'\n<DL><p>'
+        for u in urls:
+            html += f'\n<DT><A HREF="{u}" ADD_DATE="{date}" LAST_VISIT="{date}" LAST_MODIFIED="{date}">{u}</A>'
+        html += f'\n</DL><p>'
+    html += f'\n</DL><p>'
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(html)
+
+
 if __name__ == "__main__":
+
+    START = time.time()
 
     # frozen? (cxfreeze compatibility)
     DIR = os.path.normpath(
@@ -93,7 +149,7 @@ if __name__ == "__main__":
         help="export html bookmarks file",
         nargs="?",
         type=str,
-        const="bookmark.html")
+        const="bookmarks.html")
     ARGS = PARSER.parse_args()
 
     # Urls from files to the urls list | -f
@@ -117,17 +173,24 @@ if __name__ == "__main__":
     STOP_WORDS = STOP_EN + STOP_ES
 
     # Analysis
-    TOP_WORDS = get_top_words(ARGS.urls, 5)
-    CATEGORIES = get_top_words_categories(TOP_WORDS)
+    TOP_WORDS = get_top_words(ARGS.urls, 10)
+    CATEGORIES = compact_categories_urls(get_top_words_categories(TOP_WORDS))
 
-    # Sexy print
-    for t in TOP_WORDS:
-        print(f"\n{t[0]}")
-        for word_list in t[1]:
-            print(f"({word_list[0]} {word_list[1]}) ", end='')
-        print()
+    # Netscape bookmark file
+    if ARGS.export_file:
+        create_netscape_bookmark_file(CATEGORIES, ARGS.export_file)
+        print(f"Bookmarks exported to '{ARGS.export_file}' file!")
 
-    for cat, url_list in CATEGORIES.items():
-        print(f"\n{cat}")
-        for u in url_list:
-            print(u)
+    print(f"Done! ({round(time.time() - START)}s)")
+
+    # Sexy debug print
+    # for t in TOP_WORDS:
+    #     print(f"\n{t[0]}")
+    #     for word_list in t[1]:
+    #         print(f"({word_list[0]} {word_list[1]}) ", end='')
+    #     print()
+
+    # for cat, url_list in CATEGORIES.items():
+    #     print(f"\n{cat}")
+    #     for u in url_list:
+    #         print(u)
