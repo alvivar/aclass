@@ -149,7 +149,10 @@ if __name__ == "__main__":
     os.chdir(DIR)
 
     # Command line args
-    PARSER = argparse.ArgumentParser()
+    PARSER = argparse.ArgumentParser(
+        description=
+        "Analize and categorize urls by word density, and export them to a Netscape Bookmark html file using the top words as tags"
+    )
     PARSER.add_argument(
         "-u", "--urls", help="urls to analyze", nargs="+", default=[])
     PARSER.add_argument(
