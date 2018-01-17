@@ -1,15 +1,7 @@
-""" Analize and categorize urls, also export them to a Netscape Bookmark html
-file.
-
-
-TODO
-    Avoid URL repetition in categories
-    Bind the url to a None kind of word count on html request error
-    Analyze url as a source of urls (same as file)
-    Decent titles in bookmark file
-    Readme
-    Decent database with all urls analyzed
 """
+    aclass can analize and categorize urls by word density, and export them to
+    a Netscape Bookmark html file using the top words as tags.
+ """
 
 import argparse
 import json
@@ -24,7 +16,9 @@ from bs4 import BeautifulSoup
 
 
 def extract_urls(html_text):
-    """ Return a list of urls from the html text. """
+    """
+        Return a list of urls from the html text.
+    """
     soup = BeautifulSoup(html_text, "html.parser")
     return [
         a['href'] for a in soup.find_all("a") if a['href'].startswith("http")
@@ -32,7 +26,9 @@ def extract_urls(html_text):
 
 
 def extract_words(html_text, *, ignore=[]):
-    """ Return a list of words from the html text. """
+    """
+        Return a list of words from the html text.
+    """
 
     soup = BeautifulSoup(html_text, "html.parser")
 
@@ -47,7 +43,9 @@ def extract_words(html_text, *, ignore=[]):
 
 
 def get_top_words(urls_list, words_count):
-    """ Return a list of tuples with urls and their word count dictionary. """
+    """
+        Return a list of tuples with urls and their word count dictionary.
+    """
 
     headers = {
         'User-Agent':
@@ -75,9 +73,11 @@ def get_top_words(urls_list, words_count):
 
 
 def get_top_words_categories(top_words):
-    """ Return a dictionary of words referencing a list of the urls that belong
-    to them, assuming top_words as a list of tuples with urls and their word
-    counts dictionaries. """
+    """
+        Return a dictionary of words referencing a list of the urls that belong
+        to them, assuming top_words as a list of tuples with urls and their
+        word counts dictionaries.
+    """
     categories = {}
     for top in top_words:
         for tag in top[1]:
@@ -86,8 +86,10 @@ def get_top_words_categories(top_words):
 
 
 def compact_categories_urls(categories):
-    """ Return the categories with more urls in each word for all urls, assuming
-    categories as a dictionary of words with lists of urls. """
+    """
+        Return the categories with more urls in each word for all urls,
+        assuming categories as a dictionary of words with lists of urls.
+    """
 
     compact = {}
     urls_checked = []
@@ -104,8 +106,10 @@ def compact_categories_urls(categories):
 
 
 def create_netscape_bookmark_file(categories, filename):
-    """ Create a Netscape bookmark file assuming categories as a dictionary of
-    words with lists of urls. """
+    """
+        Create a Netscape bookmark file assuming categories as a dictionary of
+        words with lists of urls.
+    """
 
     # https://msdn.microsoft.com/en-us/library/aa753582(v=vs.85).aspx
 
