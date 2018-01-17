@@ -2,6 +2,7 @@
         TO DO
 
 
+    Create executable / setup.py with cx_Freeze
     Maybe by using Selenium we can extract more exact words by selecting all visible text?
     Avoid URL repetition in categories
     Bind the url to a None kind of word count on html request error
