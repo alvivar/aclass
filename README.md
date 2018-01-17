@@ -1,9 +1,10 @@
 # aclass
 
-Analize and categorize urls by word density, and export them to a Netscape Bookmark html file using the top words as tags.
-
 ```
 usage: aclass.py [-h] [-u URLS [URLS ...]] [-f FILES [FILES ...]]
+
+Analize and categorize urls by word density, and export them to a Netscape
+Bookmark html file using the top words as tags
 
 optional arguments:
   -h, --help            show this help message and exit
