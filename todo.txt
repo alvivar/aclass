@@ -1,0 +1,15 @@
+
+        TO DO
+
+
+    Maybe by using Selenium we can extract more exact words by selecting all visible text?
+    Avoid URL repetition in categories
+    Bind the url to a None kind of word count on html request error
+    Analyze url as a source of urls (same as file)
+    Decent titles in bookmark file
+    Decent database with all urls analyzed
+
+
+    2018/01/17 01:04 am
+    x Comments in convention
+    x Readme
